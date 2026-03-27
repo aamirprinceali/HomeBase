@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "homebase",
+    "name": "HomeBase",
     "slug": "homebase",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,10 +9,11 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FF6B35"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.homebase.family"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,6 +25,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }
