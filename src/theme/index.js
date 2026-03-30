@@ -1,55 +1,59 @@
 export const Colors = {
   // Brand
-  primary: '#FF6B35',
-  primaryLight: '#FF8C5A',
-  primaryDark: '#E55520',
-
-  // Secondary
-  navy: '#2D3561',
-  navyLight: '#3D4780',
+  primary: '#7C3AED',       // electric purple
+  primaryLight: '#A855F7',
+  primaryDark: '#5B21B6',
 
   // Accent
-  teal: '#4ECDC4',
-  tealLight: '#A8DADC',
+  accent: '#06B6D4',        // cyan
+  accentLight: '#67E8F9',
+
+  // Teal (kept for compatibility)
+  teal: '#06B6D4',
+  tealLight: '#67E8F9',
+
+  // Navy (kept for compatibility)
+  navy: '#0F0F1A',
+  navyLight: '#1A1A2E',
 
   // Status
-  success: '#52B788',
-  successLight: '#D8F3DC',
-  warning: '#FFB347',
-  warningLight: '#FFF3E0',
-  danger: '#E63946',
-  dangerLight: '#FFE5E7',
+  success: '#10B981',
+  successLight: '#064E3B',
+  warning: '#F59E0B',
+  warningLight: '#451A03',
+  danger: '#EF4444',
+  dangerLight: '#450A0A',
 
-  // Backgrounds
-  background: '#FFF9F5',
-  surface: '#FFFFFF',
-  surfaceAlt: '#F5F0FF',
+  // Backgrounds — dark
+  background: '#0A0A14',
+  surface: '#13131F',
+  surfaceAlt: '#1C1C2E',
+  surfaceElevated: '#222236',
 
   // Text
-  textPrimary: '#1A1A2E',
-  textSecondary: '#6B7280',
-  textLight: '#9CA3AF',
+  textPrimary: '#F1F5F9',
+  textSecondary: '#94A3B8',
+  textLight: '#475569',
   textWhite: '#FFFFFF',
 
   // Borders
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
+  border: '#1E293B',
+  borderLight: '#0F172A',
 
   // Member profile colors
   profileColors: [
-    '#FF6B6B', // coral
-    '#4A90D9', // blue
-    '#9B59B6', // purple
-    '#27AE60', // green
-    '#E67E22', // orange
-    '#1ABC9C', // teal
-    '#E91E8C', // pink
-    '#F39C12', // yellow
+    '#EF4444',
+    '#3B82F6',
+    '#8B5CF6',
+    '#10B981',
+    '#F59E0B',
+    '#06B6D4',
+    '#EC4899',
+    '#F97316',
   ],
 };
 
 export const Typography = {
-  // Font sizes — normal mode
   xs: 12,
   sm: 14,
   base: 16,
@@ -57,9 +61,8 @@ export const Typography = {
   lg: 22,
   xl: 26,
   xxl: 32,
-  xxxl: 40,
+  xxxl: 42,
 
-  // Font sizes — large text mode (1.3x)
   xsLarge: 16,
   smLarge: 18,
   baseLarge: 21,
@@ -67,7 +70,15 @@ export const Typography = {
   lgLarge: 28,
   xlLarge: 34,
   xxlLarge: 42,
-  xxxlLarge: 52,
+  xxxlLarge: 54,
+
+  fontFamily: {
+    regular: 'Outfit_400Regular',
+    medium: 'Outfit_500Medium',
+    semibold: 'Outfit_600SemiBold',
+    bold: 'Outfit_700Bold',
+    extrabold: 'Outfit_800ExtraBold',
+  },
 
   fontWeight: {
     regular: '400',
@@ -99,41 +110,40 @@ export const Radius = {
 
 export const Shadows = {
   sm: {
-    shadowColor: '#000',
+    shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 2,
   },
   md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
   },
   lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 12,
   },
 };
 
-// Returns font size based on large text preference
 export const fontSize = (size, largeText = false) => {
   if (!largeText) return size;
   return Math.round(size * 1.3);
 };
 
 export const CategoryColors = {
-  appointment: '#4A90D9',
-  medication: '#9B59B6',
-  errand: '#E67E22',
-  call: '#1ABC9C',
-  chore: '#27AE60',
-  other: '#6B7280',
+  appointment: '#3B82F6',
+  medication: '#8B5CF6',
+  errand: '#F97316',
+  call: '#06B6D4',
+  chore: '#10B981',
+  other: '#475569',
 };
 
 export const CategoryIcons = {

@@ -1,10 +1,9 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { initializeAuth, getReactNativePersistence, browserLocalPersistence } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
-// TODO: Replace with your Firebase project config
-// See README_SETUP.md for instructions on how to get these values
 const firebaseConfig = {
   apiKey: 'AIzaSyD9ElaDICaAdrR3Rh7pp-Sy_bgA3C9xUe4',
   authDomain: 'homebase-bf641.firebaseapp.com',
@@ -17,7 +16,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
+  persistence: Platform.OS === 'web'
+    ? browserLocalPersistence
+    : getReactNativePersistence(AsyncStorage),
 });
 
 export const db = getFirestore(app);
