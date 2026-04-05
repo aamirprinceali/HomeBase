@@ -28,6 +28,8 @@ import HouseholdBoardScreen from '../screens/household/HouseholdBoardScreen';
 import ShoppingListScreen from '../screens/shopping/ShoppingListScreen';
 import CalendarScreen from '../screens/calendar/CalendarScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
+import FinancesScreen from '../screens/finances/FinancesScreen';
+import AddExpenseScreen from '../screens/finances/AddExpenseScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -76,6 +78,11 @@ function HomeTabs() {
           component={HouseholdBoardScreen}
           options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="home-group" size={size} color={color} /> }}
         />
+        <Tab.Screen
+          name="Finances"
+          component={FinancesScreen}
+          options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="wallet-outline" size={size} color={color} /> }}
+        />
       </Tab.Navigator>
     );
   }
@@ -115,6 +122,11 @@ function HomeTabs() {
         component={CalendarScreen}
         options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="calendar-month-outline" size={size} color={color} /> }}
       />
+      <Tab.Screen
+        name="Finances"
+        component={FinancesScreen}
+        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="wallet-outline" size={size} color={color} /> }}
+      />
     </Tab.Navigator>
   );
 }
@@ -134,6 +146,7 @@ function AppStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Main" component={HomeTabs} />
       <Stack.Screen name="AddTask" component={AddTaskScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="AddExpense" component={AddExpenseScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );

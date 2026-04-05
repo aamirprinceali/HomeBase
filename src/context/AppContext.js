@@ -28,6 +28,7 @@ export const AppProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
   const [householdTasks, setHouseholdTasks] = useState([]);
   const [shoppingItems, setShoppingItems] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
 
   const householdId = userProfile?.householdId;
@@ -73,6 +74,17 @@ export const AppProvider = ({ children }) => {
       }
     );
 
+    // Subscribe to expenses for this household (each user sees their own via UI filter)
+    const unsubExpenses = onSnapshot(
+      query(
+        collection(db, 'households', householdId, 'expenses'),
+        orderBy('createdAt', 'desc')
+      ),
+      (snap) => {
+        setExpenses(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      }
+    );
+
     setLoadingData(false);
 
     return () => {
@@ -80,6 +92,7 @@ export const AppProvider = ({ children }) => {
       unsubTasks();
       unsubHouseholdTasks();
       unsubShopping();
+      unsubExpenses();
     };
   }, [householdId]);
 
@@ -254,6 +267,22 @@ export const AppProvider = ({ children }) => {
     );
   };
 
+  // --- Expenses ---
+  const addExpense = async ({ amount, category, note, date }) => {
+    await addDoc(collection(db, 'households', householdId, 'expenses'), {
+      amount,
+      category,
+      note: note || '',
+      date,
+      createdBy: user.uid,
+      createdAt: serverTimestamp(),
+    });
+  };
+
+  const deleteExpense = async (expenseId) => {
+    await deleteDoc(doc(db, 'households', householdId, 'expenses', expenseId));
+  };
+
   // --- Member management ---
   const updateMemberRole = async (memberId, role) => {
     await setDoc(doc(db, 'users', memberId), { role }, { merge: true });
@@ -288,6 +317,7 @@ export const AppProvider = ({ children }) => {
         tasks,
         householdTasks,
         shoppingItems,
+        expenses,
         loadingData,
         // Household
         createHousehold,
@@ -313,6 +343,9 @@ export const AppProvider = ({ children }) => {
         toggleShoppingItem,
         deleteShoppingItem,
         clearCheckedItems,
+        // Expenses
+        addExpense,
+        deleteExpense,
         // Members
         getMemberById,
         updateMemberRole,
