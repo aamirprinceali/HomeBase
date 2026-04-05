@@ -3,7 +3,7 @@
 ## Critical dev rules
 - **Always run `nvm use 20` before `npx expo start`** — Node 20 required
 - All secrets in `.env` — never hardcode Firebase config
-- Dark theme only — all new screens must import from `src/theme/index.js`
+- Current design direction is soft light mode with calm blue/lavender accents — all new screens should import from `src/theme/index.js`
 - Follow existing patterns: AppContext for data, Firestore subcollections under `households/{householdId}/`
 
 ## Where things live
@@ -32,9 +32,10 @@ users/{uid}/       — user profiles
 - `simple` — stripped tabs (Home, Tasks, Household, Finances only)
 
 ## Last session (April 2026)
-Built the full **Finances** section:
-- `src/screens/finances/FinancesScreen.js` — main view
-- `src/screens/finances/AddExpenseScreen.js` — add modal
-- AppContext updated: `expenses` state, Firestore sub, `addExpense`, `deleteExpense`
-- AppNavigator updated: Finance tab on all tab views, AddExpense modal route
-- Committed and pushed to GitHub (commit: 836498e)
+Dashboard and visual refresh:
+- `AdminDashboard` redesigned around a soft light card layout inspired by the supplied reference image
+- `MemberDashboard` aligned to the same visual layout
+- Bottom tab bar refreshed to a floating light-card style
+- Theme moved away from dark/purple-heavy styling to a calmer light palette
+- Upcoming Bills card is placeholder-only for now and routes to `Finances`
+- Verified by running `npx expo export --platform web`

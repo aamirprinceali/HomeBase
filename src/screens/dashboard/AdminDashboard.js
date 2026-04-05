@@ -1,228 +1,527 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View,
-  Text,
+  Alert,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
-  SafeAreaView,
+  Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Calendar } from 'react-native-calendars';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius, Shadows } from '../../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { format, isSameDay, isToday, startOfDay } from 'date-fns';
+import { Colors, Radius, Shadows, Spacing, Typography } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import EmergencyButton from '../../components/EmergencyButton';
-import { format } from 'date-fns';
+
+const PLACEHOLDER_BILLS = [
+  { id: 'rent', label: 'Rent / Mortgage', day: 1, amount: '$1,850', status: 'Placeholder' },
+  { id: 'power', label: 'Utilities', day: 15, amount: '$145', status: 'Placeholder' },
+  { id: 'internet', label: 'Internet', day: 22, amount: '$85', status: 'Placeholder' },
+];
 
 const getGreeting = () => {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
 };
+
+const toDateValue = (value) => {
+  if (!value) return null;
+  try {
+    return value?.toDate ? value.toDate() : new Date(value);
+  } catch {
+    return null;
+  }
+};
+
+const formatTime = () => format(new Date(), 'h:mm a');
+
+function DashboardCard({ title, subtitle, actionLabel, onPress, children, style }) {
+  return (
+    <View style={[styles.card, style]}>
+      <View style={styles.cardHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardTitle}>{title}</Text>
+          {subtitle ? <Text style={styles.cardSubtitle}>{subtitle}</Text> : null}
+        </View>
+        {actionLabel ? (
+          <TouchableOpacity onPress={onPress}>
+            <Text style={styles.cardAction}>{actionLabel}</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+      {children}
+    </View>
+  );
+}
 
 export default function AdminDashboard({ navigation }) {
   const { userProfile } = useAuth();
-  const { tasks, householdTasks, members, household, shoppingItems } = useApp();
+  const { tasks, householdTasks, members, shoppingItems, expenses } = useApp();
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   const firstName = userProfile?.name?.split(' ')[0] || 'there';
-  const today = format(new Date(), 'EEEE, MMMM d');
+  const todayLabel = format(new Date(), 'EEEE, MMMM d');
+  const avatarLetter = userProfile?.name?.[0]?.toUpperCase() || 'H';
 
-  const myPendingTasks = useMemo(
-    () => tasks.filter((t) => (t.assignedTo === userProfile?.id || (!t.assignedTo && t.createdBy === userProfile?.id)) && t.status === 'pending'),
+  const myTasks = useMemo(
+    () =>
+      tasks.filter(
+        (task) =>
+          (task.assignedTo === userProfile?.id || (!task.assignedTo && task.createdBy === userProfile?.id)) &&
+          task.status === 'pending'
+      ),
     [tasks, userProfile]
   );
 
   const openHouseholdTasks = useMemo(
-    () => householdTasks.filter((t) => t.status !== 'done'),
+    () => householdTasks.filter((task) => task.status !== 'done'),
     [householdTasks]
   );
 
-  const uncheckedShopping = shoppingItems.filter((i) => !i.isChecked).length;
+  const uncheckedShopping = useMemo(
+    () => shoppingItems.filter((item) => !item.isChecked),
+    [shoppingItems]
+  );
 
-  const getMemberStats = (memberId) => {
-    const memberTasks = tasks.filter((t) => t.assignedTo === memberId || (t.createdBy === memberId && !t.assignedTo));
-    const pending = memberTasks.filter((t) => t.status === 'pending').length;
-    const completed = memberTasks.filter((t) => t.status === 'completed').length;
-    return { pending, completed, total: memberTasks.length };
+  const expenseTotal = useMemo(
+    () =>
+      expenses
+        .filter((expense) => expense.createdBy === userProfile?.id)
+        .reduce((sum, expense) => sum + (expense.amount || 0), 0),
+    [expenses, userProfile]
+  );
+
+  const selectedDayTasks = useMemo(() => {
+    return tasks
+      .filter((task) => {
+        const dueDate = toDateValue(task.dueDate);
+        if (!dueDate) return false;
+        return format(dueDate, 'yyyy-MM-dd') === selectedDate;
+      })
+      .slice(0, 3);
+  }, [selectedDate, tasks]);
+
+  const todayFocus = useMemo(() => {
+    const today = startOfDay(new Date());
+    const dueToday = tasks.filter((task) => {
+      const dueDate = toDateValue(task.dueDate);
+      return dueDate && isSameDay(dueDate, today) && task.status === 'pending';
+    });
+
+    const houseToday = householdTasks.filter((task) => {
+      const planned = toDateValue(task.plannedDate);
+      return planned && isSameDay(planned, today) && task.status !== 'done';
+    });
+
+    return {
+      dueToday,
+      houseToday,
+    };
+  }, [householdTasks, tasks]);
+
+  const recentActivity = useMemo(() => {
+    const taskEvents = tasks
+      .map((task) => {
+        const completedAt = toDateValue(task.completedAt);
+        const createdAt = toDateValue(task.createdAt);
+        if (completedAt) {
+          return {
+            id: `task-complete-${task.id}`,
+            date: completedAt,
+            label: `Completed "${task.title}"`,
+            icon: 'check-circle-outline',
+            screen: 'Tasks',
+          };
+        }
+        if (createdAt) {
+          return {
+            id: `task-created-${task.id}`,
+            date: createdAt,
+            label: `Added task "${task.title}"`,
+            icon: 'checkbox-marked-circle-plus-outline',
+            screen: 'Tasks',
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    const householdEvents = householdTasks
+      .map((task) => {
+        const createdAt = toDateValue(task.createdAt);
+        if (!createdAt) return null;
+        return {
+          id: `house-${task.id}`,
+          date: createdAt,
+          label: `Posted household item "${task.title}"`,
+          icon: 'home-plus-outline',
+          screen: 'Household',
+        };
+      })
+      .filter(Boolean);
+
+    const shoppingEvents = shoppingItems
+      .map((item) => {
+        const createdAt = toDateValue(item.createdAt);
+        if (!createdAt) return null;
+        return {
+          id: `shopping-${item.id}`,
+          date: createdAt,
+          label: `Added "${item.name}" to shopping`,
+          icon: 'cart-plus',
+          screen: 'Shopping',
+        };
+      })
+      .filter(Boolean);
+
+    const expenseEvents = expenses
+      .filter((expense) => expense.createdBy === userProfile?.id)
+      .map((expense) => {
+        const createdAt = toDateValue(expense.createdAt) || toDateValue(expense.date);
+        if (!createdAt) return null;
+        return {
+          id: `expense-${expense.id}`,
+          date: createdAt,
+          label: `Logged ${expense.note || 'an expense'} for $${Number(expense.amount || 0).toFixed(0)}`,
+          icon: 'wallet-outline',
+          screen: 'Finances',
+        };
+      })
+      .filter(Boolean);
+
+    return [...taskEvents, ...householdEvents, ...shoppingEvents, ...expenseEvents]
+      .sort((a, b) => b.date - a.date)
+      .slice(0, 4);
+  }, [expenses, householdTasks, shoppingItems, tasks, userProfile]);
+
+  const markedDates = useMemo(() => {
+    const marks = {};
+    tasks.forEach((task) => {
+      const dueDate = toDateValue(task.dueDate);
+      if (!dueDate) return;
+      const key = format(dueDate, 'yyyy-MM-dd');
+      marks[key] = {
+        ...(marks[key] || {}),
+        marked: true,
+        dotColor: isToday(dueDate) ? Colors.primaryDark : Colors.primary,
+      };
+    });
+
+    marks[selectedDate] = {
+      ...(marks[selectedDate] || {}),
+      selected: true,
+      selectedColor: Colors.primaryDark,
+      marked: !!marks[selectedDate]?.marked,
+      dotColor: marks[selectedDate]?.dotColor || Colors.accent,
+    };
+
+    return marks;
+  }, [selectedDate, tasks]);
+
+  const nextBill = useMemo(() => {
+    const now = new Date();
+    const currentDay = now.getDate();
+    return (
+      PLACEHOLDER_BILLS.find((bill) => bill.day >= currentDay) ||
+      PLACEHOLDER_BILLS[0]
+    );
+  }, []);
+
+  const openAddMenu = () => {
+    Alert.alert('Add To HomeBase', 'Choose what you want to add.', [
+      { text: 'Task', onPress: () => navigation.navigate('AddTask') },
+      { text: 'Household Task', onPress: () => navigation.navigate('Household') },
+      { text: 'Shopping Item', onPress: () => navigation.navigate('Shopping') },
+      { text: 'Expense', onPress: () => navigation.navigate('AddExpense') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <LinearGradient colors={[Colors.primary, Colors.primaryDark]} style={styles.header}>
-          <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.greeting}>{getGreeting()},</Text>
-              <Text style={styles.name}>{firstName} 👋</Text>
-              <Text style={styles.date}>{today}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.settingsBtn}
-              onPress={() => navigation.navigate('Settings')}
-            >
-              <MaterialCommunityIcons name="cog-outline" size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
+      <LinearGradient colors={['#F4F1FA', '#F8F6F3', '#EDF3FB']} style={styles.background}>
+        <View style={styles.glowOne} />
+        <View style={styles.glowTwo} />
 
-          {/* Quick stats */}
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{myPendingTasks.length}</Text>
-              <Text style={styles.statLabel}>My Tasks</Text>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.headerShell}>
+            <View style={styles.headerCopy}>
+              <Text style={styles.greeting}>{getGreeting()}, {firstName} 👋</Text>
+              <Text style={styles.headerMeta}>{todayLabel} • {formatTime()}</Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{openHouseholdTasks.length}</Text>
-              <Text style={styles.statLabel}>House Tasks</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{uncheckedShopping}</Text>
-              <Text style={styles.statLabel}>Shopping</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{members.length}</Text>
-              <Text style={styles.statLabel}>Members</Text>
-            </View>
-          </View>
-        </LinearGradient>
 
-        <View style={styles.body}>
-          {/* My tasks preview */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>My Tasks</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Tasks')}>
-                <Text style={styles.sectionLink}>See all</Text>
+            <View style={styles.headerActions}>
+              <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Tasks')}>
+                <MaterialCommunityIcons name="bell-outline" size={20} color={Colors.textPrimary} />
+                {todayFocus.dueToday.length > 0 ? <View style={styles.notificationDot} /> : null}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.addButton} onPress={openAddMenu}>
+                <MaterialCommunityIcons name="plus" size={18} color="#fff" />
+                <Text style={styles.addButtonText}>Add</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.avatar, { backgroundColor: userProfile?.profileColor || Colors.primary }]}
+                onPress={() => navigation.navigate('Settings')}
+              >
+                <Text style={styles.avatarText}>{avatarLetter}</Text>
               </TouchableOpacity>
             </View>
-            {myPendingTasks.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <MaterialCommunityIcons name="check-circle-outline" size={28} color={Colors.success} />
-                <Text style={styles.emptyText}>You're all caught up!</Text>
-              </View>
-            ) : (
-              myPendingTasks.slice(0, 3).map((task) => (
-                <TouchableOpacity
-                  key={task.id}
-                  style={styles.taskPreviewCard}
-                  onPress={() => navigation.navigate('Tasks')}
-                >
-                  <View style={[styles.taskDot, { backgroundColor: Colors.primary }]} />
-                  <Text style={styles.taskPreviewTitle} numberOfLines={1}>{task.title}</Text>
-                  {task.dueDate && (
-                    <Text style={styles.taskPreviewDate}>
-                      {format(task.dueDate?.toDate ? task.dueDate.toDate() : new Date(task.dueDate), 'MMM d')}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              ))
-            )}
           </View>
 
-          {/* Family Overview */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Family Overview</Text>
-            </View>
-            {members.map((member) => {
-              const stats = getMemberStats(member.id);
-              return (
-                <View key={member.id} style={styles.memberCard}>
-                  <View style={[styles.memberAvatar, { backgroundColor: member.profileColor || Colors.primary }]}>
-                    <Text style={styles.memberInitial}>
-                      {member.name?.[0]?.toUpperCase() || '?'}
-                    </Text>
+          <View style={styles.statGrid}>
+            {[
+              { label: 'My Tasks', value: myTasks.length, icon: 'checkbox-marked-circle-outline', screen: 'Tasks' },
+              { label: 'House Tasks', value: openHouseholdTasks.length, icon: 'home-group', screen: 'Household' },
+              { label: 'Shopping', value: uncheckedShopping.length, icon: 'cart-outline', screen: 'Shopping' },
+              { label: 'Members', value: members.length, icon: 'account-group-outline', screen: 'Settings' },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.label}
+                style={styles.statCard}
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate(item.screen)}
+              >
+                <View style={styles.statIconWrap}>
+                  <MaterialCommunityIcons name={item.icon} size={18} color={Colors.primaryDark} />
+                </View>
+                <Text style={styles.statValue}>{item.value}</Text>
+                <Text style={styles.statLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.row}>
+            <DashboardCard
+              title="Upcoming Tasks"
+              subtitle="Your next priorities"
+              actionLabel="See all"
+              onPress={() => navigation.navigate('Tasks')}
+              style={styles.largeCard}
+            >
+              {myTasks.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <MaterialCommunityIcons name="check-circle-outline" size={26} color={Colors.success} />
+                  <Text style={styles.emptyText}>You’re all caught up for now.</Text>
+                </View>
+              ) : (
+                myTasks.slice(0, 4).map((task) => (
+                  <TouchableOpacity
+                    key={task.id}
+                    style={styles.listRow}
+                    onPress={() => navigation.navigate('Tasks')}
+                  >
+                    <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={20} color={Colors.primaryDark} />
+                    <View style={styles.listBody}>
+                      <Text style={styles.listTitle} numberOfLines={1}>{task.title}</Text>
+                      <Text style={styles.listMeta}>
+                        {task.dueDate ? format(toDateValue(task.dueDate), 'MMM d') : 'No due date'}
+                        {task.dueTime ? ` • ${task.dueTime}` : ''}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+            </DashboardCard>
+
+            <DashboardCard
+              title="Calendar"
+              subtitle="Tap a day to preview"
+              actionLabel="Open"
+              onPress={() => navigation.navigate('Calendar')}
+              style={styles.sideCard}
+            >
+              <Calendar
+                current={selectedDate}
+                onDayPress={(day) => setSelectedDate(day.dateString)}
+                hideExtraDays
+                enableSwipeMonths
+                markedDates={markedDates}
+                theme={{
+                  backgroundColor: Colors.surface,
+                  calendarBackground: Colors.surface,
+                  textSectionTitleColor: Colors.textSecondary,
+                  selectedDayBackgroundColor: Colors.primaryDark,
+                  selectedDayTextColor: '#fff',
+                  todayTextColor: Colors.primaryDark,
+                  dayTextColor: Colors.textPrimary,
+                  textDisabledColor: Colors.textLight,
+                  dotColor: Colors.primaryDark,
+                  arrowColor: Colors.primaryDark,
+                  monthTextColor: Colors.textPrimary,
+                  textDayFontWeight: '500',
+                  textMonthFontWeight: '600',
+                  textDayHeaderFontWeight: '600',
+                }}
+                style={styles.miniCalendar}
+              />
+
+              <View style={styles.calendarPreview}>
+                {(selectedDayTasks.length === 0 ? [{ id: 'none', title: 'No tasks due for this day.' }] : selectedDayTasks).map((task) => (
+                  <View key={task.id} style={styles.calendarTaskRow}>
+                    <MaterialCommunityIcons name="calendar-check-outline" size={16} color={Colors.navy} />
+                    <Text style={styles.calendarTaskText} numberOfLines={1}>{task.title}</Text>
                   </View>
-                  <View style={styles.memberInfo}>
-                    <View style={styles.memberNameRow}>
-                      <Text style={styles.memberName}>{member.name}</Text>
-                      <View style={[styles.roleBadge, member.role === 'admin' && styles.roleBadgeAdmin]}>
-                        <Text style={[styles.roleText, member.role === 'admin' && styles.roleTextAdmin]}>
-                          {member.role}
-                        </Text>
+                ))}
+              </View>
+            </DashboardCard>
+          </View>
+
+          <View style={styles.row}>
+            <DashboardCard
+              title="Household"
+              subtitle="Family overview and board"
+              actionLabel="View board"
+              onPress={() => navigation.navigate('Household')}
+              style={styles.thirdCard}
+            >
+              <View style={styles.memberStack}>
+                {members.slice(0, 4).map((member) => {
+                  const memberTaskCount = tasks.filter((task) => task.assignedTo === member.id && task.status === 'pending').length;
+                  return (
+                    <View key={member.id} style={styles.memberRow}>
+                      <View style={[styles.memberAvatar, { backgroundColor: member.profileColor || Colors.primary }]}>
+                        <Text style={styles.memberAvatarText}>{member.name?.[0]?.toUpperCase() || '?'}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.memberName}>{member.name}</Text>
+                        <Text style={styles.memberInfo}>{memberTaskCount} active tasks</Text>
                       </View>
                     </View>
-                    <View style={styles.memberStats}>
-                      <Text style={styles.memberStat}>
-                        <Text style={styles.memberStatNum}>{stats.pending}</Text> pending
-                      </Text>
-                      <Text style={styles.memberStatDivider}>·</Text>
-                      <Text style={styles.memberStat}>
-                        <Text style={styles.memberStatNum}>{stats.completed}</Text> done
-                      </Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.assignBtn}
-                    onPress={() => navigation.navigate('Tasks', { assignTo: member.id })}
-                  >
-                    <MaterialCommunityIcons name="plus" size={16} color={Colors.primary} />
-                  </TouchableOpacity>
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Household Board Preview */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Household Board</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Household')}>
-                <Text style={styles.sectionLink}>See all</Text>
-              </TouchableOpacity>
-            </View>
-            {openHouseholdTasks.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <MaterialCommunityIcons name="home-check-outline" size={28} color={Colors.success} />
-                <Text style={styles.emptyText}>No open household tasks</Text>
+                  );
+                })}
               </View>
-            ) : (
-              openHouseholdTasks.slice(0, 3).map((task) => (
-                <TouchableOpacity
-                  key={task.id}
-                  style={styles.taskPreviewCard}
-                  onPress={() => navigation.navigate('Household')}
-                >
-                  <View style={[styles.taskDot, { backgroundColor: Colors.warning }]} />
-                  <Text style={styles.taskPreviewTitle} numberOfLines={1}>{task.title}</Text>
-                  <View style={[styles.statusPill, { backgroundColor: task.claimedBy ? Colors.primary + '20' : Colors.warning + '20' }]}>
-                    <Text style={{ fontSize: 10, color: task.claimedBy ? Colors.primary : Colors.warning, fontWeight: '600' }}>
-                      {task.claimedBy ? 'Claimed' : 'Open'}
-                    </Text>
+
+              <View style={styles.boardPreview}>
+                {openHouseholdTasks.slice(0, 2).map((task) => (
+                  <View key={task.id} style={styles.boardPill}>
+                    <Text style={styles.boardPillText} numberOfLines={1}>{task.title}</Text>
                   </View>
-                </TouchableOpacity>
-              ))
-            )}
+                ))}
+                {openHouseholdTasks.length === 0 ? <Text style={styles.smallHint}>No open household items.</Text> : null}
+              </View>
+            </DashboardCard>
+
+            <DashboardCard
+              title="Shopping"
+              subtitle="Shared list preview"
+              actionLabel="Open"
+              onPress={() => navigation.navigate('Shopping')}
+              style={styles.thirdCard}
+            >
+              {uncheckedShopping.slice(0, 3).map((item) => (
+                <View key={item.id} style={styles.compactRow}>
+                  <MaterialCommunityIcons name="circle-small" size={18} color={Colors.primaryDark} />
+                  <Text style={styles.compactRowText} numberOfLines={1}>{item.name}</Text>
+                </View>
+              ))}
+              {uncheckedShopping.length === 0 ? <Text style={styles.smallHint}>Everything on the list is picked up.</Text> : null}
+            </DashboardCard>
+
+            <DashboardCard
+              title="Upcoming Bills"
+              subtitle="Placeholder preview"
+              actionLabel="Finances"
+              onPress={() => navigation.navigate('Finances')}
+              style={styles.thirdCard}
+            >
+              <Text style={styles.financesTotal}>${expenseTotal.toFixed(0)}</Text>
+              <Text style={styles.financesCaption}>Spending logged so far</Text>
+              {PLACEHOLDER_BILLS.slice(0, 2).map((bill) => (
+                <View key={bill.id} style={styles.billRow}>
+                  <View>
+                    <Text style={styles.billLabel}>{bill.label}</Text>
+                    <Text style={styles.billMeta}>Due on day {bill.day}</Text>
+                  </View>
+                  <Text style={styles.billAmount}>{bill.amount}</Text>
+                </View>
+              ))}
+            </DashboardCard>
           </View>
 
-          {/* Quick Actions */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.row}>
+            <DashboardCard
+              title="Activity"
+              subtitle="Recent household updates"
+              actionLabel="Refresh"
+              onPress={() => navigation.navigate('Tasks')}
+              style={styles.halfCard}
+            >
+              {recentActivity.length === 0 ? (
+                <Text style={styles.smallHint}>Your latest updates will appear here.</Text>
+              ) : (
+                recentActivity.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.activityRow}
+                    onPress={() => navigation.navigate(item.screen)}
+                  >
+                    <View style={styles.activityIcon}>
+                      <MaterialCommunityIcons name={item.icon} size={16} color={Colors.primaryDark} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.activityLabel} numberOfLines={1}>{item.label}</Text>
+                      <Text style={styles.activityTime}>{format(item.date, 'MMM d • h:mm a')}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+            </DashboardCard>
+
+            <DashboardCard
+              title="Today Focus"
+              subtitle="What needs attention now"
+              actionLabel="Open"
+              onPress={() => navigation.navigate('Tasks')}
+              style={styles.halfCard}
+            >
+              <View style={styles.focusRow}>
+                <Text style={styles.focusValue}>{todayFocus.dueToday.length}</Text>
+                <Text style={styles.focusLabel}>tasks due today</Text>
+              </View>
+              <View style={styles.focusRow}>
+                <Text style={styles.focusValue}>{todayFocus.houseToday.length}</Text>
+                <Text style={styles.focusLabel}>house items planned today</Text>
+              </View>
+              <View style={styles.nextBillCard}>
+                <MaterialCommunityIcons name="wallet-outline" size={18} color={Colors.primaryDark} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.nextBillTitle}>{nextBill.label}</Text>
+                  <Text style={styles.nextBillMeta}>Placeholder due on day {nextBill.day}</Text>
+                </View>
+              </View>
+            </DashboardCard>
+          </View>
+
+          <DashboardCard title="Quick Actions" subtitle="Simple shortcuts for the whole house" style={styles.card}>
             <View style={styles.quickActions}>
               {[
-                { icon: 'plus-circle', label: 'Add Task', color: Colors.primary, screen: 'AddTask' },
-                { icon: 'home-plus', label: 'House Task', color: Colors.warning, screen: 'Household' },
-                { icon: 'cart-plus', label: 'Shopping', color: Colors.teal, screen: 'Shopping' },
-                { icon: 'calendar-plus', label: 'Calendar', color: Colors.navy, screen: 'Calendar' },
+                { icon: 'plus-circle-outline', label: 'Add Task', screen: 'AddTask' },
+                { icon: 'home-plus', label: 'House Task', screen: 'Household' },
+                { icon: 'cart-outline', label: 'Shopping', screen: 'Shopping' },
+                { icon: 'calendar-month-outline', label: 'Calendar', screen: 'Calendar' },
+                { icon: 'wallet-outline', label: 'Finances', screen: 'Finances' },
               ].map((action) => (
                 <TouchableOpacity
-                  key={action.screen}
-                  style={styles.quickActionCard}
+                  key={action.label}
+                  style={styles.quickAction}
                   onPress={() => navigation.navigate(action.screen)}
-                  activeOpacity={0.7}
                 >
-                  <View style={[styles.quickActionIcon, { backgroundColor: action.color + '15' }]}>
-                    <MaterialCommunityIcons name={action.icon} size={24} color={action.color} />
+                  <View style={styles.quickActionIcon}>
+                    <MaterialCommunityIcons name={action.icon} size={20} color={Colors.primaryDark} />
                   </View>
                   <Text style={styles.quickActionLabel}>{action.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
-        </View>
-      </ScrollView>
+          </DashboardCard>
+        </ScrollView>
+      </LinearGradient>
       <EmergencyButton />
     </SafeAreaView>
   );
@@ -230,143 +529,395 @@ export default function AdminDashboard({ navigation }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.xxl,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+  background: { flex: 1 },
+  glowOne: {
+    position: 'absolute',
+    top: -30,
+    right: -10,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: '#DEE6FF',
+    opacity: 0.7,
   },
-  headerTop: {
+  glowTwo: {
+    position: 'absolute',
+    bottom: 120,
+    left: -40,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: '#E9DFFC',
+    opacity: 0.45,
+  },
+  content: {
+    padding: Spacing.base,
+    paddingBottom: 122,
+    gap: Spacing.base,
+  },
+  headerShell: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.xl,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.78)',
+    borderRadius: Radius.xl,
+    padding: Spacing.lg,
+    marginTop: Spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.9)',
+    ...Shadows.md,
   },
-  settingsBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  headerCopy: { flex: 1, paddingRight: Spacing.base },
+  greeting: {
+    fontSize: Typography.xl,
+    fontFamily: Typography.fontFamily.bold,
+    color: Colors.textPrimary,
+  },
+  headerMeta: {
+    marginTop: 4,
+    fontSize: Typography.sm,
+    color: Colors.textSecondary,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  greeting: { fontSize: Typography.base, color: 'rgba(255,255,255,0.8)' },
-  name: { fontSize: Typography.xxl, fontWeight: Typography.fontWeight.extrabold, color: '#fff' },
-  date: { fontSize: Typography.sm, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  statsRow: {
+  notificationDot: {
+    position: 'absolute',
+    top: 10,
+    right: 11,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.danger,
+  },
+  addButton: {
     flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: Radius.md,
-    padding: Spacing.sm,
     alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.primaryDark,
   },
-  statNumber: {
-    fontSize: Typography.xl,
-    fontWeight: Typography.fontWeight.extrabold,
+  addButtonText: {
     color: '#fff',
-  },
-  statLabel: { fontSize: 10, color: 'rgba(255,255,255,0.8)', marginTop: 2, textAlign: 'center' },
-  body: { padding: Spacing.base },
-  section: { marginBottom: Spacing.xl },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: Typography.base,
-    fontWeight: Typography.fontWeight.bold,
-    color: Colors.textPrimary,
-  },
-  sectionLink: { fontSize: Typography.sm, color: Colors.primary, fontWeight: Typography.fontWeight.medium },
-  emptyCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.xl,
-    alignItems: 'center',
-    gap: Spacing.sm,
-    ...Shadows.sm,
-  },
-  emptyText: { fontSize: Typography.sm, color: Colors.textSecondary },
-  taskPreviewCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    padding: Spacing.base,
-    marginBottom: Spacing.xs,
-    gap: Spacing.sm,
-    ...Shadows.sm,
-  },
-  taskDot: { width: 8, height: 8, borderRadius: 4 },
-  taskPreviewTitle: {
-    flex: 1,
     fontSize: Typography.sm,
-    color: Colors.textPrimary,
-    fontWeight: Typography.fontWeight.medium,
+    fontFamily: Typography.fontFamily.semibold,
   },
-  taskPreviewDate: { fontSize: Typography.xs, color: Colors.textSecondary },
-  statusPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
-  },
-  memberCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.base,
-    marginBottom: Spacing.xs,
-    gap: Spacing.md,
-    ...Shadows.sm,
-  },
-  memberAvatar: {
+  avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  memberInitial: { fontSize: Typography.lg, fontWeight: Typography.fontWeight.bold, color: '#fff' },
-  memberInfo: { flex: 1 },
-  memberNameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  memberName: { fontSize: Typography.base, fontWeight: Typography.fontWeight.semibold, color: Colors.textPrimary },
-  roleBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.border,
+  avatarText: {
+    color: '#fff',
+    fontSize: Typography.base,
+    fontFamily: Typography.fontFamily.bold,
   },
-  roleBadgeAdmin: { backgroundColor: Colors.primary + '20' },
-  roleText: { fontSize: 10, color: Colors.textSecondary, textTransform: 'capitalize', fontWeight: '600' },
-  roleTextAdmin: { color: Colors.primary },
-  memberStats: { flexDirection: 'row', alignItems: 'center', marginTop: 3, gap: 6 },
-  memberStat: { fontSize: Typography.xs, color: Colors.textSecondary },
-  memberStatNum: { fontWeight: Typography.fontWeight.bold, color: Colors.textPrimary },
-  memberStatDivider: { color: Colors.textLight },
-  assignBtn: {
+  statGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  statCard: {
+    width: '48%',
+    backgroundColor: 'rgba(255,255,255,0.86)',
+    borderRadius: Radius.xl,
+    padding: Spacing.base,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
+  },
+  statIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.surfaceAlt,
+    marginBottom: Spacing.sm,
+  },
+  statValue: {
+    fontSize: Typography.xl,
+    fontFamily: Typography.fontFamily.bold,
+    color: Colors.textPrimary,
+  },
+  statLabel: {
+    marginTop: 2,
+    fontSize: Typography.sm,
+    color: Colors.textSecondary,
+  },
+  row: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderRadius: Radius.xl,
+    padding: Spacing.base,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.base,
+    gap: Spacing.sm,
+  },
+  cardTitle: {
+    fontSize: Typography.base,
+    fontFamily: Typography.fontFamily.semibold,
+    color: Colors.textPrimary,
+  },
+  cardSubtitle: {
+    marginTop: 2,
+    fontSize: Typography.xs,
+    color: Colors.textSecondary,
+  },
+  cardAction: {
+    fontSize: Typography.sm,
+    color: Colors.primaryDark,
+    fontFamily: Typography.fontFamily.semibold,
+  },
+  largeCard: { width: '58%' },
+  sideCard: { width: '39%' },
+  thirdCard: { width: '100%' },
+  halfCard: { width: '48.5%' },
+  emptyState: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+  },
+  emptyText: {
+    fontSize: Typography.sm,
+    color: Colors.textSecondary,
+  },
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  listBody: { flex: 1 },
+  listTitle: {
+    fontSize: Typography.sm,
+    color: Colors.textPrimary,
+    fontFamily: Typography.fontFamily.medium,
+  },
+  listMeta: {
+    marginTop: 2,
+    fontSize: Typography.xs,
+    color: Colors.textSecondary,
+  },
+  miniCalendar: {
+    borderRadius: Radius.lg,
+    marginHorizontal: -4,
+  },
+  calendarPreview: {
+    marginTop: Spacing.sm,
+    gap: 8,
+  },
+  calendarTaskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  calendarTaskText: {
+    flex: 1,
+    fontSize: Typography.xs,
+    color: Colors.textSecondary,
+  },
+  memberStack: { gap: 10 },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  memberAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  memberAvatarText: {
+    color: '#fff',
+    fontSize: Typography.sm,
+    fontFamily: Typography.fontFamily.bold,
+  },
+  memberName: {
+    fontSize: Typography.sm,
+    color: Colors.textPrimary,
+    fontFamily: Typography.fontFamily.medium,
+  },
+  memberInfo: {
+    marginTop: 1,
+    fontSize: Typography.xs,
+    color: Colors.textSecondary,
+  },
+  boardPreview: {
+    marginTop: Spacing.base,
+    gap: 8,
+  },
+  boardPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surfaceAlt,
+  },
+  boardPillText: {
+    fontSize: Typography.xs,
+    color: Colors.textPrimary,
+  },
+  compactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  compactRowText: {
+    flex: 1,
+    fontSize: Typography.sm,
+    color: Colors.textPrimary,
+  },
+  smallHint: {
+    fontSize: Typography.xs,
+    color: Colors.textSecondary,
+  },
+  financesTotal: {
+    fontSize: Typography.xxl,
+    fontFamily: Typography.fontFamily.bold,
+    color: Colors.textPrimary,
+  },
+  financesCaption: {
+    marginTop: 2,
+    marginBottom: Spacing.md,
+    fontSize: Typography.xs,
+    color: Colors.textSecondary,
+  },
+  billRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+  },
+  billLabel: {
+    fontSize: Typography.sm,
+    color: Colors.textPrimary,
+  },
+  billMeta: {
+    marginTop: 2,
+    fontSize: Typography.xs,
+    color: Colors.textSecondary,
+  },
+  billAmount: {
+    fontSize: Typography.sm,
+    color: Colors.primaryDark,
+    fontFamily: Typography.fontFamily.semibold,
+  },
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: 8,
+  },
+  activityIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.primary + '15',
+    backgroundColor: Colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quickActions: { flexDirection: 'row', gap: Spacing.sm },
-  quickActionCard: { flex: 1, alignItems: 'center', gap: Spacing.sm },
-  quickActionIcon: {
-    width: 56,
-    height: 56,
+  activityLabel: {
+    fontSize: Typography.sm,
+    color: Colors.textPrimary,
+  },
+  activityTime: {
+    marginTop: 2,
+    fontSize: Typography.xs,
+    color: Colors.textSecondary,
+  },
+  focusRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+    marginBottom: 10,
+  },
+  focusValue: {
+    fontSize: Typography.xl,
+    fontFamily: Typography.fontFamily.bold,
+    color: Colors.primaryDark,
+  },
+  focusLabel: {
+    fontSize: Typography.sm,
+    color: Colors.textSecondary,
+  },
+  nextBillCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: Radius.lg,
-    alignItems: 'center',
+    padding: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  nextBillTitle: {
+    fontSize: Typography.sm,
+    color: Colors.textPrimary,
+    fontFamily: Typography.fontFamily.medium,
+  },
+  nextBillMeta: {
+    marginTop: 2,
+    fontSize: Typography.xs,
+    color: Colors.textSecondary,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  quickAction: {
+    width: '48%',
+    minHeight: 74,
+    borderRadius: Radius.xl,
+    padding: Spacing.base,
+    backgroundColor: Colors.surfaceAlt,
     justifyContent: 'center',
   },
-  quickActionLabel: { fontSize: Typography.xs, color: Colors.textSecondary, textAlign: 'center', fontWeight: '500' },
+  quickActionIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFFB8',
+    marginBottom: Spacing.sm,
+  },
+  quickActionLabel: {
+    fontSize: Typography.sm,
+    color: Colors.textPrimary,
+    fontFamily: Typography.fontFamily.medium,
+  },
 });

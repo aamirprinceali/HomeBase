@@ -32,7 +32,7 @@ export default function WelcomeScreen({ navigation }) {
         <View style={styles.header}>
           <View style={styles.logoWrap}>
             <LinearGradient
-              colors={[Colors.primary, Colors.accent]}
+              colors={[Colors.primaryDark, Colors.primary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.logoGradient}
@@ -50,7 +50,7 @@ export default function WelcomeScreen({ navigation }) {
         <View style={styles.heroSection}>
           <Text style={styles.heroLine1}>Run your home</Text>
           <LinearGradient
-            colors={[Colors.primary, Colors.accent]}
+            colors={[Colors.primaryDark, Colors.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.gradientTextWrap}
@@ -81,7 +81,7 @@ export default function WelcomeScreen({ navigation }) {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={[Colors.primary, Colors.accent]}
+              colors={[Colors.primaryDark, Colors.primary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.primaryBtn}

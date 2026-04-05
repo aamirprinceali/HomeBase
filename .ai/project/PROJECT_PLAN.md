@@ -2,6 +2,12 @@
 
 ## Current Priority Order
 
+### 0. Dashboard + visual QA (ACTIVE)
+- Verify redesigned dashboard on real devices
+- Check floating tab bar spacing on smaller phones
+- Confirm all dashboard cards route to the correct screens
+- Decide whether `SimpleDashboard` should get a full matching redesign or stay accessibility-first
+
 ### 1. Firebase wiring audit (HIGH)
 Most screens exist but not all data persists to Firestore. Need to verify:
 - Tasks ✅ wired
@@ -19,7 +25,7 @@ Most screens exist but not all data persists to Firestore. Need to verify:
 ### 3. Finances improvements (MEDIUM)
 - Add date picker to AddExpenseScreen (currently defaults to today)
 - Add edit expense capability
-- Add a Finance summary card to AdminDashboard and MemberDashboard
+- Replace placeholder Upcoming Bills dashboard card with real bill data when supported
 - Budget limit per category (optional stretch goal)
 
 ### 4. Calendar wiring (MEDIUM)
@@ -38,3 +44,4 @@ Most screens exist but not all data persists to Firestore. Need to verify:
 ### 7. Polish & testing (ONGOING)
 - Test all screens for edge cases
 - Fix any UI bugs found on real device
+- Validate dashboard spacing/interactions on iPhone and Android after redesign

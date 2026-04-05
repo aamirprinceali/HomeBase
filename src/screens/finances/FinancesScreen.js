@@ -17,14 +17,14 @@ import { format, startOfWeek, startOfMonth, isAfter } from 'date-fns';
 
 // ── Expense categories with icons and colors ──────────────────────────────────
 export const EXPENSE_CATEGORIES = [
-  { key: 'food',          label: 'Food',          icon: 'food-fork-drink',      color: '#F97316' },
-  { key: 'bills',         label: 'Bills',         icon: 'lightning-bolt',       color: '#EF4444' },
-  { key: 'medical',       label: 'Medical',       icon: 'medical-bag',          color: '#8B5CF6' },
-  { key: 'personal',      label: 'Personal',      icon: 'account',              color: '#06B6D4' },
-  { key: 'transport',     label: 'Transport',     icon: 'car',                  color: '#3B82F6' },
-  { key: 'shopping',      label: 'Shopping',      icon: 'shopping',             color: '#10B981' },
-  { key: 'entertainment', label: 'Fun',           icon: 'movie-open',           color: '#EC4899' },
-  { key: 'other',         label: 'Other',         icon: 'dots-horizontal',      color: '#475569' },
+  { key: 'food',          label: 'Food',          icon: 'food-fork-drink',      color: '#DDAE79' },
+  { key: 'bills',         label: 'Bills',         icon: 'lightning-bolt',       color: '#7D8FEF' },
+  { key: 'medical',       label: 'Medical',       icon: 'medical-bag',          color: '#A38CE0' },
+  { key: 'personal',      label: 'Personal',      icon: 'account',              color: '#9DB4D3' },
+  { key: 'transport',     label: 'Transport',     icon: 'car',                  color: '#7AA6F8' },
+  { key: 'shopping',      label: 'Shopping',      icon: 'shopping',             color: '#8BCBC4' },
+  { key: 'entertainment', label: 'Fun',           icon: 'movie-open',           color: '#D9818B' },
+  { key: 'other',         label: 'Other',         icon: 'dots-horizontal',      color: '#9EACC0' },
 ];
 
 export const getCategoryMeta = (key) =>
@@ -119,7 +119,7 @@ export default function FinancesScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* ── Header gradient ─────────────────────────────────────────────── */}
-        <LinearGradient colors={['#064E3B', '#10B981']} style={styles.header}>
+        <LinearGradient colors={[Colors.primaryDark, '#8FA6F5', '#C8D8FF']} style={styles.header}>
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.headerTitle}>Finances</Text>
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   expenseLabel: { fontSize: Typography.sm, fontFamily: Typography.fontFamily.semibold, color: Colors.textPrimary },
   expenseDate: { fontSize: Typography.xs, color: Colors.textSecondary, marginTop: 2 },
   expenseRight: { alignItems: 'flex-end', gap: 4 },
-  expenseAmount: { fontSize: Typography.base, fontFamily: Typography.fontFamily.bold, color: Colors.success },
+  expenseAmount: { fontSize: Typography.base, fontFamily: Typography.fontFamily.bold, color: Colors.primaryDark },
   deleteBtn: { padding: 4 },
 
   // Empty state

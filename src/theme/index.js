@@ -1,55 +1,55 @@
 export const Colors = {
   // Brand
-  primary: '#7C3AED',       // electric purple
-  primaryLight: '#A855F7',
-  primaryDark: '#5B21B6',
+  primary: '#7D8FEF',
+  primaryLight: '#A9B5FF',
+  primaryDark: '#5E73DD',
 
   // Accent
-  accent: '#06B6D4',        // cyan
-  accentLight: '#67E8F9',
+  accent: '#BFD7FF',
+  accentLight: '#DDE9FF',
 
   // Teal (kept for compatibility)
-  teal: '#06B6D4',
-  tealLight: '#67E8F9',
+  teal: '#8BCBC4',
+  tealLight: '#CDEBE6',
 
   // Navy (kept for compatibility)
-  navy: '#0F0F1A',
-  navyLight: '#1A1A2E',
+  navy: '#6E84A3',
+  navyLight: '#A5B4CC',
 
   // Status
-  success: '#10B981',
-  successLight: '#064E3B',
-  warning: '#F59E0B',
-  warningLight: '#451A03',
-  danger: '#EF4444',
-  dangerLight: '#450A0A',
+  success: '#64B99F',
+  successLight: '#E6F5EF',
+  warning: '#E7B77A',
+  warningLight: '#FFF3E4',
+  danger: '#D9818B',
+  dangerLight: '#FBECEF',
 
-  // Backgrounds — dark
-  background: '#0A0A14',
-  surface: '#13131F',
-  surfaceAlt: '#1C1C2E',
-  surfaceElevated: '#222236',
+  // Backgrounds — light
+  background: '#F7F5F2',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F5F1FB',
+  surfaceElevated: '#EEF3FB',
 
   // Text
-  textPrimary: '#F1F5F9',
-  textSecondary: '#94A3B8',
-  textLight: '#475569',
+  textPrimary: '#22324D',
+  textSecondary: '#6F7E96',
+  textLight: '#9EACC0',
   textWhite: '#FFFFFF',
 
   // Borders
-  border: '#1E293B',
-  borderLight: '#0F172A',
+  border: '#E2E8F2',
+  borderLight: '#EEF2F7',
 
   // Member profile colors
   profileColors: [
-    '#EF4444',
-    '#3B82F6',
-    '#8B5CF6',
-    '#10B981',
-    '#F59E0B',
-    '#06B6D4',
-    '#EC4899',
-    '#F97316',
+    '#7D8FEF',
+    '#8BCBC4',
+    '#DDAE79',
+    '#D9818B',
+    '#9DB4D3',
+    '#9B86D8',
+    '#7AA6F8',
+    '#F0B9A8',
   ],
 };
 
@@ -110,24 +110,24 @@ export const Radius = {
 
 export const Shadows = {
   sm: {
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowColor: '#A5B4CC',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
     elevation: 2,
   },
   md: {
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
+    shadowColor: '#9AA9C2',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
     elevation: 6,
   },
   lg: {
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
+    shadowColor: '#97A8C5',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.16,
+    shadowRadius: 28,
     elevation: 12,
   },
 };
@@ -138,12 +138,12 @@ export const fontSize = (size, largeText = false) => {
 };
 
 export const CategoryColors = {
-  appointment: '#3B82F6',
-  medication: '#8B5CF6',
-  errand: '#F97316',
-  call: '#06B6D4',
-  chore: '#10B981',
-  other: '#475569',
+  appointment: '#7AA6F8',
+  medication: '#A38CE0',
+  errand: '#E7B77A',
+  call: '#8BCBC4',
+  chore: '#64B99F',
+  other: '#9EACC0',
 };
 
 export const CategoryIcons = {

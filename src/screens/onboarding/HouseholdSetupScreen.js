@@ -75,7 +75,7 @@ export default function HouseholdSetupScreen() {
                 onPress={() => setMode('create')}
                 activeOpacity={0.8}
               >
-                <LinearGradient colors={[Colors.primary, Colors.primaryDark]} style={styles.choiceGradient}>
+                <LinearGradient colors={[Colors.primaryDark, Colors.primary]} style={styles.choiceGradient}>
                   <MaterialCommunityIcons name="home-plus" size={36} color="#fff" />
                   <Text style={styles.choiceTitle}>Create a Household</Text>
                   <Text style={styles.choiceDesc}>Start fresh. You'll become the admin and can invite family members.</Text>
@@ -87,7 +87,7 @@ export default function HouseholdSetupScreen() {
                 onPress={() => setMode('join')}
                 activeOpacity={0.8}
               >
-                <LinearGradient colors={[Colors.navy, Colors.navyLight]} style={styles.choiceGradient}>
+                <LinearGradient colors={['#97AAC8', '#C8D6EA']} style={styles.choiceGradient}>
                   <MaterialCommunityIcons name="home-account" size={36} color="#fff" />
                   <Text style={styles.choiceTitle}>Join a Household</Text>
                   <Text style={styles.choiceDesc}>Someone already set one up. Use their invite code to join.</Text>

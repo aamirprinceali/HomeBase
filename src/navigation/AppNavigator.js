@@ -34,6 +34,23 @@ import AddExpenseScreen from '../screens/finances/AddExpenseScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+function tabIcon(name, focused, color, size) {
+  return (
+    <View
+      style={{
+        minWidth: 42,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: focused ? Colors.surfaceAlt : 'transparent',
+      }}
+    >
+      <MaterialCommunityIcons name={name} size={focused ? size + 1 : size} color={color} />
+    </View>
+  );
+}
+
 function HomeTabs() {
   const { userProfile } = useAuth();
   const role = userProfile?.role;
@@ -45,43 +62,65 @@ function HomeTabs() {
     MemberDashboard;
 
   const tabBarStyle = {
-    backgroundColor: '#fff',
-    borderTopColor: Colors.borderLight,
-    paddingTop: 6,
-    height: 80,
+    position: 'absolute',
+    left: 14,
+    right: 14,
+    bottom: 12,
+    height: 78,
+    paddingTop: 8,
+    paddingHorizontal: 8,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderTopWidth: 0,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 28,
+    shadowColor: '#9AA9C2',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.16,
+    shadowRadius: 24,
+    elevation: 10,
+  };
+
+  const commonScreenOptions = {
+    headerShown: false,
+    tabBarStyle,
+    tabBarActiveTintColor: Colors.primaryDark,
+    tabBarInactiveTintColor: Colors.textSecondary,
+    tabBarLabelStyle: {
+      fontSize: 10,
+      fontWeight: '600',
+      paddingBottom: 8,
+    },
+    tabBarHideOnKeyboard: true,
   };
 
   if (isSimple) {
-    // Simplified navigation for Dad
     return (
       <Tab.Navigator
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle,
-          tabBarActiveTintColor: Colors.teal,
-          tabBarInactiveTintColor: Colors.textLight,
-          tabBarLabelStyle: { fontSize: 12, fontWeight: '600', paddingBottom: 8 },
-        }}
+        screenOptions={commonScreenOptions}
       >
         <Tab.Screen
           name="Home"
           component={DashboardComponent}
-          options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="home-heart" size={size} color={color} /> }}
+          options={{
+            tabBarLabel: '',
+            tabBarIcon: ({ color, size, focused }) => tabIcon('home-heart', focused, color, size),
+          }}
         />
         <Tab.Screen
           name="Tasks"
           component={TasksScreen}
-          options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={size} color={color} /> }}
+          options={{ tabBarIcon: ({ color, size, focused }) => tabIcon('checkbox-marked-circle-outline', focused, color, size) }}
         />
         <Tab.Screen
           name="Household"
           component={HouseholdBoardScreen}
-          options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="home-group" size={size} color={color} /> }}
+          options={{ tabBarIcon: ({ color, size, focused }) => tabIcon('home-group', focused, color, size) }}
         />
         <Tab.Screen
           name="Finances"
           component={FinancesScreen}
-          options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="wallet-outline" size={size} color={color} /> }}
+          options={{ tabBarIcon: ({ color, size, focused }) => tabIcon('wallet-outline', focused, color, size) }}
         />
       </Tab.Navigator>
     );
@@ -89,43 +128,40 @@ function HomeTabs() {
 
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textLight,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', paddingBottom: 8 },
-      }}
+      screenOptions={commonScreenOptions}
     >
       <Tab.Screen
         name="Home"
         component={DashboardComponent}
-        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="home-heart" size={size} color={color} /> }}
+        options={{
+          tabBarLabel: '',
+          tabBarIcon: ({ color, size, focused }) => tabIcon('home-heart', focused, color, size),
+        }}
       />
       <Tab.Screen
         name="Tasks"
         component={TasksScreen}
-        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color, size, focused }) => tabIcon('checkbox-marked-circle-outline', focused, color, size) }}
       />
       <Tab.Screen
         name="Household"
         component={HouseholdBoardScreen}
-        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="home-group" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color, size, focused }) => tabIcon('home-group', focused, color, size) }}
       />
       <Tab.Screen
         name="Shopping"
         component={ShoppingListScreen}
-        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="cart-outline" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color, size, focused }) => tabIcon('cart-outline', focused, color, size) }}
       />
       <Tab.Screen
         name="Calendar"
         component={CalendarScreen}
-        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="calendar-month-outline" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color, size, focused }) => tabIcon('calendar-month-outline', focused, color, size) }}
       />
       <Tab.Screen
         name="Finances"
         component={FinancesScreen}
-        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="wallet-outline" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color, size, focused }) => tabIcon('wallet-outline', focused, color, size) }}
       />
     </Tab.Navigator>
   );

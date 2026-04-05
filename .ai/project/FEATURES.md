@@ -12,10 +12,11 @@
 - Admin tabs: Home, Tasks, Household, Shopping, Calendar, Finances
 - Simple tabs (Dad): Home, Tasks, Household, Finances
 - Native stack for modals (AddTask, AddExpense, Settings)
+- Floating light-style bottom tab bar refresh
 
 ### Dashboards (role-based routing)
-- `AdminDashboard` — full household management view
-- `MemberDashboard` — individual member view
+- `AdminDashboard` — redesigned light dashboard with greeting/date/time, summary strip, task focus, mini calendar, household/shopping/finances/activity/today cards, and quick actions
+- `MemberDashboard` — currently mirrors the redesigned main dashboard layout
 - `SimpleDashboard` — minimal/simplified view
 
 ### Tasks
@@ -55,6 +56,10 @@
 ### Onboarding
 - Household setup (create or join with invite code)
 
+### UI Theme Refresh (April 2026)
+- App palette shifted from dark purple-heavy styling to a soft light blue/lavender system
+- Welcome/onboarding, dashboard, finances, and navigation now share the new design language
+
 ---
 
 ## ❌ Not Yet Done / Known Gaps
@@ -64,5 +69,5 @@
 - [ ] Expense editing (can add/delete, not edit)
 - [ ] Expense date picker (currently defaults to today only)
 - [ ] Budget limits / alerts per category
-- [ ] Dashboard summary card for finances
+- [ ] Replace placeholder Upcoming Bills dashboard card with real bill tracking data
 - [ ] Firebase Auth end-to-end test (register → login → persist)

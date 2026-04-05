@@ -47,12 +47,12 @@ export default function SimpleDashboard({ navigation }) {
   };
 
   const categoryColors = {
-    appointment: '#4A90D9',
-    medication: '#9B59B6',
-    errand: '#E67E22',
-    call: '#1ABC9C',
-    chore: '#27AE60',
-    other: '#6B7280',
+    appointment: '#7AA6F8',
+    medication: '#A38CE0',
+    errand: '#DDAE79',
+    call: '#8BCBC4',
+    chore: '#64B99F',
+    other: '#9EACC0',
   };
 
   return (
